@@ -1,5 +1,5 @@
+package SistemaMedico;
 public class Enfermero implements Runnable { // Asumiendo que implementa Runnable o hereda de Thread
-    
     public void run() {
         while (true) {
             try {
@@ -33,8 +33,8 @@ public class Enfermero implements Runnable { // Asumiendo que implementa Runnabl
         System.out.println("[Enfermero] Preparando paciente normal en SdP.");
         Hospital.mutexSdP.release();
 
-        Hospital.permisoIngresoSdP.release();  
-        Hospital.pacienteEnSdP.release();      
+        Hospital.permisoIngresoSdP.release();
+        Hospital.pacienteEnSdP.release();
     }
 
     private void prepararPacienteUrgente() throws InterruptedException {

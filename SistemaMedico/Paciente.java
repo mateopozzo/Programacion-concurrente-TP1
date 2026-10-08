@@ -1,4 +1,4 @@
-package concurrente.concurrente;
+package SistemaMedico;
 
 public class Paciente implements Runnable {
     
@@ -10,7 +10,7 @@ public class Paciente implements Runnable {
 
     @Override
     public void run() {
-        
+        try {
             if (esUrgente) {
                 System.out.println("[Paciente Urgente] Llegó directamente a guardia.");
                 Hospital.pacienteUrgente.release();     // Aviso específico
@@ -34,6 +34,8 @@ public class Paciente implements Runnable {
             // Espera a que el médico lo empiece a atender
             Hospital.permisoAtencionMedica.acquire();
             System.out.println("[Paciente " + (esUrgente ? "Urgente" : "Normal") + "] Siendo atendido por el médico..."); 
-
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

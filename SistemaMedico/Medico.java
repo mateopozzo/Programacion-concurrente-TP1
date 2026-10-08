@@ -1,13 +1,13 @@
-package concurrente.concurrente;
-
-import static java.lang.Thread.sleep;
+package SistemaMedico;
 
 public class Medico implements Runnable {
     
-    void run(){
-        while(true){ //notoque
-            Hospital.pacienteEnSdP.acquire();
-            
+    @Override
+    public void run(){
+        try {
+            while(true){ 
+                Hospital.pacienteEnSdP.acquire();
+                
                 Hospital.mutexSdP.acquire();
                 Hospital.pacientesEnSalaPreparacion--;
                 Hospital.mutexSdP.release();
@@ -17,6 +17,9 @@ public class Medico implements Runnable {
                 System.out.println("[Médico] Atendiendo paciente...");
                 Thread.sleep(3000); // Simula el tiempo de atención
                 System.out.println("[Médico] Paciente atendido. Médico libre.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
     
