@@ -1,3 +1,4 @@
 .vscode/
 *.jar
 bin/
+bin/*
