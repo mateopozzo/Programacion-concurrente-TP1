@@ -1,24 +1,31 @@
 package SistemaMedico;
-public class Enfermero implements Runnable { // Asumiendo que implementa Runnable o hereda de Thread
+public class Enfermero implements Runnable { 
+
+    private Hospital hospital = null;
+
     public void run() {
+        hospital = Hospital.obtenerInstancia();
         while (true) {
             try {
                 //  Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
-                Hospital.pacientesPendientes.acquire();
+                hospital.pacientesPendientes.acquire();
                 
                 //  Al despertar, verifica primero si la señal fue por una urgencia
-                if (Hospital.pacienteUrgente.tryAcquire()) {
+                if (hospital.pacienteUrgente.tryAcquire()) {
                     prepararPacienteUrgente();
                 } else {
-                    // 3. Si no pudo tomar una urgencia, entonces la señal fue de un paciente normal
-                    Hospital.pacienteEnSdE.acquire();
+                    // si no pudo tomar una urgencia, entonces la señal fue de un paciente normal
+                    hospital.pacienteEnSdE.acquire();
 
                     // Decrementa de la Sala de Espera de forma segura
-                    Hospital.mutexSdE.acquire();
-                    Hospital.pacientesEnSalaEspera--;
-                    Hospital.mutexSdE.release();
+                    hospital.mutexSdE.acquire();
+                    hospital.pacientesEnSalaEspera--;
+                    hospital.mutexSdE.release();
 
                     prepararPacienteNormal();
+
+                    System.out.println("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
+                    hospital.logEstado();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -28,21 +35,23 @@ public class Enfermero implements Runnable { // Asumiendo que implementa Runnabl
     }
 
     private void prepararPacienteNormal() throws InterruptedException {
-        Hospital.mutexSdP.acquire();
-        Hospital.pacientesEnSalaPreparacion++;
-        System.out.println("[Enfermero] Preparando paciente normal en SdP.");
-        Hospital.mutexSdP.release();
+        hospital.mutexSdP.acquire();
+        hospital.pacientesEnSalaPreparacion++;
+        System.out.println("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
+        hospital.logEstado();
+        hospital.mutexSdP.release();
 
-        Hospital.permisoIngresoSdP.release();
-        Hospital.pacienteEnSdP.release();
+        hospital.permisoIngresoSdP.release();
+        hospital.pacienteEnSdP.release();
     }
 
     private void prepararPacienteUrgente() throws InterruptedException {
-        Hospital.mutexSdP.acquire();
-        Hospital.pacientesEnSalaPreparacion++;
-        System.out.println("[Enfermero] ¡ATENCIÓN URGENTE! Preparando paciente en SdP.");
-        Hospital.mutexSdP.release();
-        Hospital.permisoIngresoSdP.release();
-        Hospital.pacienteEnSdP.release();
+        hospital.mutexSdP.acquire();
+        hospital.pacientesEnSalaPreparacion++;
+        System.out.println("======== URGENCIA PASA A ENFERMERIA ========");
+        hospital.logEstado();
+        hospital.mutexSdP.release();
+        hospital.permisoIngresoSdP.release();
+        hospital.pacienteEnSdP.release();
     }
 }

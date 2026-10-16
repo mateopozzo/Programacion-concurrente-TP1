@@ -1,22 +1,32 @@
 package SistemaMedico;
 
 public class Medico implements Runnable {
+
+    private Hospital hospital = null;
     
     @Override
     public void run(){
+        hospital = Hospital.obtenerInstancia();
         try {
             while(true){ 
-                Hospital.pacienteEnSdP.acquire();
+                hospital.pacienteEnSdP.acquire();
                 
-                Hospital.mutexSdP.acquire();
-                Hospital.pacientesEnSalaPreparacion--;
-                Hospital.mutexSdP.release();
+                hospital.mutexSdP.acquire();
+                hospital.pacientesEnSalaPreparacion--;
+                hospital.pacientesEnAtencionMedica++;
+                hospital.mutexSdP.release();
 
-                Hospital.permisoAtencionMedica.release(); // Avisa al paciente que empezó la consulta
+                hospital.permisoAtencionMedica.release(); // Avisa al paciente que empezó la consulta
 
-                System.out.println("[Médico] Atendiendo paciente...");
+                System.out.println("======== COMIENZA LA ATENCION AL CLIENTE ========");
+                hospital.logEstado();
+
                 Thread.sleep(3000); // Simula el tiempo de atención
-                System.out.println("[Médico] Paciente atendido. Médico libre.");
+
+                // Agarra mutex solo para poder hacer un buen log
+                hospital.mutexSdP.acquire();
+                hospital.pacientesEnAtencionMedica--;
+                hospital.mutexSdP.release();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

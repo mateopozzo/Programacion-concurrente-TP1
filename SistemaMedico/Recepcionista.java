@@ -1,22 +1,32 @@
 package SistemaMedico;
 
 public class Recepcionista implements Runnable {
+
+    private Hospital hospital = null;
+
     public void run(){
+        hospital = Hospital.obtenerInstancia();
         try {
             while(true){
-                Hospital.pacienteEnRecepcion.acquire();
-                Hospital.mutexSdE.acquire();
-                if(Hospital.pacientesEnSalaEspera == Hospital.MAX_SALA_ESPERA){
-                    Hospital.mutexSdE.release();
-                    Hospital.pacienteEnSdE.acquire(); s
-                    // Queda esperando a que alla un lugar en Sala de Espera
+                hospital.pacienteEnRecepcion.acquire();
+                hospital.mutexSdE.acquire();
+                hospital.pacientesEnColaRecepcion--;
+                if(hospital.pacientesEnSalaEspera == hospital.MAX_SALA_ESPERA){
+                    hospital.mutexSdE.release();
+                    hospital.pacienteEnSdE.acquire();
+                    // Queda esperando a que haya un lugar en Sala de Espera
                 } else {
-                    Hospital.mutexSdE.release();
+                    hospital.mutexSdE.release();
                 }
-                Hospital.permisoIngresoSdE.release();
-                Hospital.mutexSdE.acquire();
-                Hospital.pacientesEnSalaEspera++;
-                Hospital.mutexSdE.release();
+                hospital.mutexSdE.acquire();
+                hospital.permisoIngresoSdE.release();
+                hospital.pacientesEnSalaEspera++;
+                hospital.mutexSdE.release();
+
+                hospital.permisoImpresion.acquire(1);
+                System.out.println("======== INGRESO A SDE ========");
+                hospital.logEstado();
+                hospital.permisoImpresion.release(1);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
