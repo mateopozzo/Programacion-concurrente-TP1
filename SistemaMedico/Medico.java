@@ -6,17 +6,15 @@ import static java.lang.Thread.sleep;
 
 public class Medico implements Runnable {
 
-    private Hospital hospital = null;
-    private static Random generadorVA = new Random();
-
-
+    private static final Random generadorVA = new Random();
+    
     private int tiempoAtencion() {
         return generadorVA.nextInt(100,3000);
     }
 
     @Override
     public void run(){
-        hospital = Hospital.obtenerInstancia();
+        Hospital hospital = Hospital.obtenerInstancia();
         try {
             while(true){
                 // Espera a que algún paciente haya sido preparado por el enfermero
