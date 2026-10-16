@@ -24,15 +24,8 @@ public class Enfermero implements Runnable {
                 //  Al despertar, verifica primero si la señal fue por una urgencia
                 if (hospital.pacienteUrgente.tryAcquire()) {
                     prepararPacienteUrgente();
-                } else {
+                } else if (hospital.pacienteEnSdE.tryAcquire()) {
                     // No pudo tomar una urgencia, entonces la señal fue de un paciente normal
-                    hospital.pacienteEnSdE.acquire();
-
-                    // Decrementa de la Sala de Espera
-                    hospital.mutexSdE.acquire();
-                    hospital.pacientesEnSalaEspera--;
-                    hospital.mutexSdE.release();
-
                     prepararPacienteNormal();
                 }
             } catch (InterruptedException e) {
@@ -48,6 +41,9 @@ public class Enfermero implements Runnable {
         hospital.mutexSdE.acquire();
         hospital.pacientesEnSalaEspera--;
         hospital.mutexSdE.release();
+
+        // Notifica a recepción que queda un lugar vacío en la sala de espera
+        hospital.lugaresDisponiblesSdE.release();
 
         // Actualiza contador
         hospital.mutexSdP.acquire();

@@ -28,6 +28,7 @@ public class Hospital {
     public Semaphore pacienteEnSdE = new Semaphore(0);       // Aviva al Enfermero
     public Semaphore pacienteUrgente = new Semaphore(0);     // Aviva al Enfermero (Prioridad)
     public Semaphore pacienteEnSdP = new Semaphore(0);       // Aviva al Médico
+    public Semaphore lugaresDisponiblesSdE = new Semaphore(MAX_SALA_ESPERA); // Utilizado por recepcionista para enviar pacientes a SdE
 
     // Semáforos para sincronizar la transición individual del paciente
     public Semaphore permisoIngresoSdE = new Semaphore(0);

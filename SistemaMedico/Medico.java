@@ -7,7 +7,7 @@ import static java.lang.Thread.sleep;
 public class Medico implements Runnable {
 
     private static final Random generadorVA = new Random();
-    
+
     private int tiempoAtencion() {
         return generadorVA.nextInt(100,3000);
     }
