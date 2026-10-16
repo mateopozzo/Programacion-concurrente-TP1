@@ -27,10 +27,7 @@ public class Medico implements Runnable {
                 hospital.mutexSdP.release();
 
                 // Impresión de estado
-                hospital.permisoImpresion.acquire();
-                System.out.println("======== COMIENZA LA ATENCION AL CLIENTE ========");
-                hospital.logEstado();
-                hospital.permisoImpresion.release();
+                hospital.logEstado("======== COMIENZA LA ATENCION AL CLIENTE ========");
 
                 // Simula el tiempo de atención
                 Thread.sleep(tiempoAtencion());

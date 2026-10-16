@@ -14,16 +14,15 @@ public class Paciente implements Runnable {
         hospital = Hospital.obtenerInstancia();
         try {
             if (esUrgente) {
-
                 // Impresión de estado
-                hospital.permisoImpresion.acquire();
-                System.out.println("========== ARRIBO DE URGENCIA ========");
-                hospital.logEstado();
-                hospital.permisoImpresion.release();
+                hospital.logEstado("========== ARRIBO DE URGENCIA ========");
 
                 // Notifica que hay un paciente en espera
                 hospital.pacienteUrgente.release(); // Aviso específico
                 hospital.pacientesPendientes.release(); // Despierta al enfermero
+
+                // Espera que el enfermero lo llame a la Sala de Preparación
+                hospital.permisoIngresoSdPUrgente.acquire();
             } else {
 
                 // Contador de pacientes esperando en recepción
@@ -32,10 +31,7 @@ public class Paciente implements Runnable {
                 hospital.mutexSdE.release();
 
                 // Impresión de estado
-                hospital.permisoImpresion.acquire(1);
-                System.out.println("========== ARRIBO TURNO COMUN ========");
-                hospital.logEstado();
-                hospital.permisoImpresion.release(1);
+                hospital.logEstado("========== ARRIBO TURNO COMUN ========");
 
                 // Notifica a Recepción que está esperando
                 hospital.pacienteEnRecepcion.release();
@@ -46,10 +42,12 @@ public class Paciente implements Runnable {
                 // Ya en la Sala de Espera, notifica al enfermero
                 hospital.pacienteEnSdE.release();       // Aviso específico
                 hospital.pacientesPendientes.release(); // Despierta al enfermero
+
+                // Espera que el enfermero lo llame a la Sala de Preparación
+                hospital.permisoIngresoSdPNormal.acquire();
             }
             
-            // Espera que el enfermero lo llame a la Sala de Preparación
-            hospital.permisoIngresoSdP.acquire();
+
 
             // Espera a que el médico lo empiece a atender
             hospital.permisoAtencionMedica.acquire();

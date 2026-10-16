@@ -32,7 +32,8 @@ public class Hospital {
 
     // Semáforos para sincronizar la transición individual del paciente
     public Semaphore permisoIngresoSdE = new Semaphore(0);
-    public Semaphore permisoIngresoSdP = new Semaphore(0);
+    public Semaphore permisoIngresoSdPUrgente = new Semaphore(0);
+    public Semaphore permisoIngresoSdPNormal = new Semaphore(0);
     public Semaphore permisoAtencionMedica = new Semaphore(0);
     public Semaphore permisoImpresion = new Semaphore(1);
     
@@ -42,16 +43,23 @@ public class Hospital {
     public int pacientesEnColaRecepcion = 0;
     public int pacientesEnAtencionMedica = 0;
 
-    public void logEstado(){
+    public void logEstado(String tituloDeLog) throws InterruptedException {
+        permisoImpresion.acquire();
+        mutexSdE.acquire();
+        mutexSdP.acquire();
+        System.out.println("======== " + tituloDeLog + " ========");
         System.out.println("Pacientes esperando en cola de recepcion: " + pacientesEnColaRecepcion);
         System.out.println("Pacientes esperando en hall: " + pacientesEnSalaEspera);
         System.out.println("En enfermeria: " + pacientesEnSalaPreparacion);
         System.out.println("En atencion médica: " + pacientesEnAtencionMedica);
         System.out.println("================");
         System.out.println("\n");
+        mutexSdP.release();
+        mutexSdE.release();
+        permisoImpresion.release();
     }
 
-    public void iniciar(){
+    public void iniciar() throws InterruptedException {
         Random generadorVA = new Random();
         new Thread(new Medico()).start();
         System.out.println("medico");
@@ -61,8 +69,10 @@ public class Hospital {
         System.out.println("recepcionista");
         while(true){
             new Thread(new Paciente(generadorVA.nextBoolean())).start();
+            permisoImpresion.acquire();
             System.out.println("======== PACIENTE ARRIBA A HOSPITAL ========");
             this.logEstado();
+            permisoImpresion.release();
             try {
                 sleep(generadorVA.nextInt(200,5000));
             } catch (InterruptedException e) {

@@ -20,6 +20,7 @@ public class Enfermero implements Runnable {
             try {
                 //  Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
                 hospital.pacientesPendientes.acquire();
+
                 
                 //  Al despertar, verifica primero si la señal fue por una urgencia
                 if (hospital.pacienteUrgente.tryAcquire()) {
@@ -51,23 +52,19 @@ public class Enfermero implements Runnable {
         hospital.mutexSdP.release();
 
         // Impresión de estado
-        hospital.permisoImpresion.acquire();
-        System.out.println("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
-        hospital.logEstado();
-        hospital.permisoImpresion.release();
+        hospital.logEstado("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
+
+        // Simula tiempo de preparación
+        sleep(tiempoAtencion());
 
         // Notifica al Paciente que terminó su preparción
-        hospital.permisoIngresoSdP.release();
+        hospital.permisoIngresoSdPNormal.release();
 
         // Notifica al Médico que tiene un paciente por atender
         hospital.pacienteEnSdP.release();
     }
 
     private void prepararPacienteUrgente() throws InterruptedException {
-        // Actualiza contador
-        hospital.mutexSdE.acquire();
-        hospital.pacientesEnSalaEspera--;
-        hospital.mutexSdE.release();
 
         // Actualiza contador
         hospital.mutexSdP.acquire();
@@ -75,16 +72,13 @@ public class Enfermero implements Runnable {
         hospital.mutexSdP.release();
 
         // Impresión de estado
-        hospital.permisoImpresion.acquire();
-        System.out.println("======== URGENCIA PASA A ENFERMERIA ========");
-        hospital.logEstado();
-        hospital.permisoImpresion.release();
+        hospital.logEstado("======== URGENCIA PASA A ENFERMERIA ========");
 
         // Simula tiempo de preparación
         sleep(tiempoAtencion());
 
         // Notifica al paciente que terminó su preparación
-        hospital.permisoIngresoSdP.release();
+        hospital.permisoIngresoSdPUrgente.release();
 
         // Notifica al médico que deja un paciente en la sala de preparación
         hospital.pacienteEnSdP.release();

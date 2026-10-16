@@ -19,19 +19,16 @@ public class Recepcionista implements Runnable {
                 // Si SdE está llena, espera a que el Enfermero libere algún lugar
                 hospital.lugaresDisponiblesSdE.acquire();
 
-                // Notifica al Paciente que ingresó a la SdE
-                hospital.permisoIngresoSdE.release();
-
                 // Actualiza contadores
                 hospital.mutexSdE.acquire();
                 hospital.pacientesEnSalaEspera++;
                 hospital.mutexSdE.release();
 
+                // Notifica al Paciente que ingresó a la SdE
+                hospital.permisoIngresoSdE.release();
+
                 // Impresión de estado
-                hospital.permisoImpresion.acquire(1);
-                System.out.println("======== INGRESO A SDE ========");
-                hospital.logEstado();
-                hospital.permisoImpresion.release(1);
+                hospital.logEstado("======== INGRESO A SDE ========");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
