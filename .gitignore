@@ -8,5 +8,6 @@ out/*
 bin/
 bin/*
 # Extensiones
+*.class
 *.iml
 *.jar
