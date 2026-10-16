@@ -1,7 +1,18 @@
 package SistemaMedico;
-public class Enfermero implements Runnable { 
+
+import java.util.Random;
+
+import static java.lang.Thread.sleep;
+
+public class Enfermero implements Runnable {
 
     private Hospital hospital = null;
+
+    private static final Random generadorVA = new Random();
+
+    private int tiempoAtencion() {
+        return generadorVA.nextInt(100,1500);
+    }
 
     public void run() {
         hospital = Hospital.obtenerInstancia();
@@ -14,44 +25,72 @@ public class Enfermero implements Runnable {
                 if (hospital.pacienteUrgente.tryAcquire()) {
                     prepararPacienteUrgente();
                 } else {
-                    // si no pudo tomar una urgencia, entonces la señal fue de un paciente normal
+                    // No pudo tomar una urgencia, entonces la señal fue de un paciente normal
                     hospital.pacienteEnSdE.acquire();
 
-                    // Decrementa de la Sala de Espera de forma segura
+                    // Decrementa de la Sala de Espera
                     hospital.mutexSdE.acquire();
                     hospital.pacientesEnSalaEspera--;
                     hospital.mutexSdE.release();
 
                     prepararPacienteNormal();
-
-                    System.out.println("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
-                    hospital.logEstado();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                break; // Buena práctica para poder detener el hilo
+                break;
             }
         }
     }
 
     private void prepararPacienteNormal() throws InterruptedException {
+
+        // Actualiza contador
+        hospital.mutexSdE.acquire();
+        hospital.pacientesEnSalaEspera--;
+        hospital.mutexSdE.release();
+
+        // Actualiza contador
         hospital.mutexSdP.acquire();
         hospital.pacientesEnSalaPreparacion++;
-        System.out.println("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
-        hospital.logEstado();
         hospital.mutexSdP.release();
 
+        // Impresión de estado
+        hospital.permisoImpresion.acquire();
+        System.out.println("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
+        hospital.logEstado();
+        hospital.permisoImpresion.release();
+
+        // Notifica al Paciente que terminó su preparción
         hospital.permisoIngresoSdP.release();
+
+        // Notifica al Médico que tiene un paciente por atender
         hospital.pacienteEnSdP.release();
     }
 
     private void prepararPacienteUrgente() throws InterruptedException {
+        // Actualiza contador
+        hospital.mutexSdE.acquire();
+        hospital.pacientesEnSalaEspera--;
+        hospital.mutexSdE.release();
+
+        // Actualiza contador
         hospital.mutexSdP.acquire();
         hospital.pacientesEnSalaPreparacion++;
+        hospital.mutexSdP.release();
+
+        // Impresión de estado
+        hospital.permisoImpresion.acquire();
         System.out.println("======== URGENCIA PASA A ENFERMERIA ========");
         hospital.logEstado();
-        hospital.mutexSdP.release();
+        hospital.permisoImpresion.release();
+
+        // Simula tiempo de preparación
+        sleep(tiempoAtencion());
+
+        // Notifica al paciente que terminó su preparación
         hospital.permisoIngresoSdP.release();
+
+        // Notifica al médico que deja un paciente en la sala de preparación
         hospital.pacienteEnSdP.release();
     }
 }
