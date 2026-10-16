@@ -1,4 +1,12 @@
+# Carpetas 
 .vscode/
-*.jar
+.vscode/*
+out/
+out/*
+.idea/
+.idea/*
 bin/
 bin/*
+# Extensiones
+*.iml
+*.jar
