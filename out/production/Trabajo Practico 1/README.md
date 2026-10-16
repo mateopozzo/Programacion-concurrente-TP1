@@ -1,1 +1,0 @@
-# Solución de para la sincronización de turnos médicos
