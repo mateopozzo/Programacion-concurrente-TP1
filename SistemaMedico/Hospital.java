@@ -17,10 +17,12 @@ public class Hospital {
     }
 
     public final int MAX_SALA_ESPERA = 10;
+    public final int MAX_SALA_PREPARACION = 5;
 
     // Muteces para secciones críticas (variables compartidas)
     public Semaphore mutexSdE = new Semaphore(1); // Protege contador de Sala de Espera
     public Semaphore mutexSdP = new Semaphore(1); // Protege contador de Sala de Preparación
+    public Semaphore mutexImpresion = new Semaphore(1);
 
     // Semáforos para flujo de pacientes (notificación)
     public Semaphore pacienteEnRecepcion = new Semaphore(0); // Aviva a la Recepcionista
@@ -29,14 +31,14 @@ public class Hospital {
     public Semaphore pacienteUrgente = new Semaphore(0);     // Aviva al Enfermero (Prioridad)
     public Semaphore pacienteEnSdP = new Semaphore(0);       // Aviva al Médico
     public Semaphore lugaresDisponiblesSdE = new Semaphore(MAX_SALA_ESPERA); // Utilizado por recepcionista para enviar pacientes a SdE
+    public Semaphore lugaresDisponiblesSdP = new Semaphore(MAX_SALA_PREPARACION); // Utilizado por Enfermero para enviar pacientes a SdP
 
     // Semáforos para sincronizar la transición individual del paciente
     public Semaphore permisoIngresoSdE = new Semaphore(0);
     public Semaphore permisoIngresoSdPUrgente = new Semaphore(0);
     public Semaphore permisoIngresoSdPNormal = new Semaphore(0);
     public Semaphore permisoAtencionMedica = new Semaphore(0);
-    public Semaphore permisoImpresion = new Semaphore(1);
-    
+
     // Contadores
     public int pacientesEnSalaEspera = 0;
     public int pacientesEnSalaPreparacion = 0;
@@ -44,7 +46,7 @@ public class Hospital {
     public int pacientesEnAtencionMedica = 0;
 
     public void logEstado(String tituloDeLog) throws InterruptedException {
-        permisoImpresion.acquire();
+        mutexImpresion.acquire();
         mutexSdE.acquire();
         mutexSdP.acquire();
         System.out.println("======== " + tituloDeLog + " ========");
@@ -56,7 +58,7 @@ public class Hospital {
         System.out.println("\n");
         mutexSdP.release();
         mutexSdE.release();
-        permisoImpresion.release();
+        mutexImpresion.release();
     }
 
     public void iniciar() throws InterruptedException {
@@ -69,12 +71,9 @@ public class Hospital {
         System.out.println("recepcionista");
         while(true){
             new Thread(new Paciente(generadorVA.nextBoolean())).start();
-            permisoImpresion.acquire();
-            System.out.println("======== PACIENTE ARRIBA A HOSPITAL ========");
-            this.logEstado();
-            permisoImpresion.release();
+            this.logEstado("======== PACIENTE ARRIBA A HOSPITAL ========");
             try {
-                sleep(generadorVA.nextInt(200,5000));
+                sleep(generadorVA.nextInt(200,2000));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

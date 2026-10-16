@@ -20,6 +20,9 @@ public class Medico implements Runnable {
                 // Espera a que algún paciente haya sido preparado por el enfermero
                 hospital.pacienteEnSdP.acquire();
 
+                // Notifica al enfermero que sacó a un Paciente de la Sala de preparación
+                hospital.lugaresDisponiblesSdP.release();
+
                 // Actualización de contadores
                 hospital.mutexSdP.acquire();
                 hospital.pacientesEnSalaPreparacion--;

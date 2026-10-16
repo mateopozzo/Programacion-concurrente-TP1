@@ -38,33 +38,39 @@ public class Enfermero implements Runnable {
 
     private void prepararPacienteNormal() throws InterruptedException {
 
-        // Actualiza contador
-        hospital.mutexSdE.acquire();
-        hospital.pacientesEnSalaEspera--;
-        hospital.mutexSdE.release();
-
-        // Notifica a recepción que queda un lugar vacío en la sala de espera
-        hospital.lugaresDisponiblesSdE.release();
+        // Revisa si hay lugar en la sala de preparacion
+        hospital.lugaresDisponiblesSdP.acquire();
 
         // Actualiza contador
         hospital.mutexSdP.acquire();
         hospital.pacientesEnSalaPreparacion++;
         hospital.mutexSdP.release();
 
+        // Notifica a recepción que queda un lugar vacío en la sala de espera
+        hospital.lugaresDisponiblesSdE.release();
+
+        // Actualiza contador
+        hospital.mutexSdE.acquire();
+        hospital.pacientesEnSalaEspera--;
+        hospital.mutexSdE.release();
+
         // Impresión de estado
         hospital.logEstado("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
 
+        // Notifica al Paciente que pasa a la sala de Preparación
+        hospital.permisoIngresoSdPNormal.release();
+
         // Simula tiempo de preparación
         sleep(tiempoAtencion());
-
-        // Notifica al Paciente que terminó su preparción
-        hospital.permisoIngresoSdPNormal.release();
 
         // Notifica al Médico que tiene un paciente por atender
         hospital.pacienteEnSdP.release();
     }
 
     private void prepararPacienteUrgente() throws InterruptedException {
+
+        // Revisa si hay lugar en la sala de preparacion
+        hospital.lugaresDisponiblesSdP.acquire();
 
         // Actualiza contador
         hospital.mutexSdP.acquire();
