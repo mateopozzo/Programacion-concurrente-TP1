@@ -30,8 +30,8 @@ public class Medico implements Runnable {
                 hospital.mutexSdP.release();
 
                 // Impresión de estado
+                hospital.permisoAtencionMedica.release();
                 hospital.logEstado("======== COMIENZA LA ATENCION AL CLIENTE ========");
-
                 // Simula el tiempo de atención
                 Thread.sleep(tiempoAtencion());
 
@@ -41,7 +41,9 @@ public class Medico implements Runnable {
                 hospital.mutexSdP.release();
 
                 // Avisa al paciente que finalizó su turno
-                hospital.permisoAtencionMedica.release();
+                hospital.siendoAtendido.release();
+                hospital.logEstado("======== FINALIZA LA ATENCION AL CLIENTE ========");
+
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

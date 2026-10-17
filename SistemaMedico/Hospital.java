@@ -38,7 +38,7 @@ public class Hospital {
     public Semaphore permisoIngresoSdPUrgente = new Semaphore(0);
     public Semaphore permisoIngresoSdPNormal = new Semaphore(0);
     public Semaphore permisoAtencionMedica = new Semaphore(0);
-
+    public Semaphore siendoAtendido = new Semaphore(0);
     // Contadores
     public int pacientesEnSalaEspera = 0;
     public int pacientesEnSalaPreparacion = 0;

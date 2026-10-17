@@ -51,7 +51,8 @@ public class Paciente implements Runnable {
 
             // Espera a que el médico lo empiece a atender
             hospital.permisoAtencionMedica.acquire();
-
+            //Espera a que termine de ser atendido
+            hospital.siendoAtendido.acquire();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

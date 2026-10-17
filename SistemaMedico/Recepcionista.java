@@ -11,16 +11,12 @@ public class Recepcionista implements Runnable {
                 // Espera el arribo de algún paciente
                 hospital.pacienteEnRecepcion.acquire();
 
-                // Actualiza contador
-                hospital.mutexSdE.acquire();
-                hospital.pacientesEnColaRecepcion--;
-                hospital.mutexSdE.release();
-
                 // Si SdE está llena, espera a que el Enfermero libere algún lugar
                 hospital.lugaresDisponiblesSdE.acquire();
 
                 // Actualiza contadores
                 hospital.mutexSdE.acquire();
+                hospital.pacientesEnColaRecepcion--;
                 hospital.pacientesEnSalaEspera++;
                 hospital.mutexSdE.release();
 
