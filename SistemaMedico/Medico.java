@@ -4,6 +4,7 @@ import java.util.Random;
 
 import static java.lang.Thread.sleep;
 
+
 public class Medico implements Runnable {
 
     private static final Random generadorVA = new Random();

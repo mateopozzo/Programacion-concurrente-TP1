@@ -61,6 +61,7 @@ public class Hospital {
         mutexImpresion.release();
     }
 
+
     public void iniciar() throws InterruptedException {
         Random generadorVA = new Random();
         new Thread(new Medico()).start();
