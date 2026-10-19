@@ -1,39 +1,70 @@
 package SistemaMedico;
 
 public class Paciente implements Runnable {
-    
-    private boolean esUrgente; // Define qué tipo de paciente es
 
-    public Paciente(boolean esUrgente) {
+    private final int id;            // Identifica al paciente en el log
+    private final boolean esUrgente; // Define qué tipo de paciente es
+    private Hospital hospital = null;
+
+    public Paciente(int id, boolean esUrgente) {
+        this.id = id;
         this.esUrgente = esUrgente;
     }
 
     @Override
     public void run() {
+        hospital = Hospital.obtenerInstancia();
         try {
             if (esUrgente) {
-                System.out.println("[Paciente Urgente] Llegó directamente a guardia.");
-                Hospital.pacienteUrgente.release();     // Aviso específico
-                Hospital.pacientesPendientes.release(); // Despierta al enfermero
+                // Cuenta la urgencia mientras espera al enfermero
+                hospital.mutexSdP.acquire();
+                hospital.pacientesUrgentesEsperando++;
+                hospital.mutexSdP.release();
+
+                // Impresión de estado
+                hospital.logEstado("ARRIBO DE URGENCIA (paciente " + id + ")");
+
+                // Notifica que hay un paciente en espera
+                hospital.pacienteUrgente.release();     // Aviso específico
+                hospital.pacientesPendientes.release(); // Despierta al enfermero
+
+                // Espera a que el enfermero termine de prepararlo
+                hospital.permisoIngresoSdPUrgente.acquire();
+
+                // Espera a que el médico lo llame (las urgencias pasan antes que los normales)
+                hospital.permisoAtencionUrgente.acquire();
             } else {
-                System.out.println("[Paciente Normal] Llegó a la puerta del hospital.");
-                Hospital.pacienteEnRecepcion.release(); // Avisa a la recepcionista
+
+                // Contador de pacientes esperando en recepción
+                hospital.mutexSdE.acquire();
+                hospital.pacientesEnColaRecepcion++;
+                hospital.mutexSdE.release();
+
+                // Impresión de estado
+                hospital.logEstado("ARRIBO TURNO COMUN (paciente " + id + ")");
+
+                // Notifica a Recepción que está esperando
+                hospital.pacienteEnRecepcion.release();
 
                 // Espera que la recepcionista le dé entrada a la SdE
-                Hospital.permisoIngresoSdE.acquire();
-                System.out.println("[Paciente Normal] Ingresó a la Sala de Espera.");
-                
+                hospital.permisoIngresoSdE.acquire();
+
                 // Ya en la Sala de Espera, notifica al enfermero
-                Hospital.pacienteEnSdE.release();       // Aviso específico
-                Hospital.pacientesPendientes.release(); // Despierta al enfermero
+                hospital.pacienteEnSdE.release();       // Aviso específico
+                hospital.pacientesPendientes.release(); // Despierta al enfermero
+
+                // Espera a que el enfermero termine de prepararlo
+                hospital.permisoIngresoSdPNormal.acquire();
+
+                // Espera a que el médico lo llame (después de las urgencias)
+                hospital.permisoAtencionNormal.acquire();
             }
 
-            // Espera que el enfermero lo llame a la Sala de Preparación
-            Hospital.permisoIngresoSdP.acquire();
+            // Espera a que termine de ser atendido
+            hospital.siendoAtendido.acquire();
 
-            // Espera a que el médico lo empiece a atender
-            Hospital.permisoAtencionMedica.acquire();
-            System.out.println("[Paciente " + (esUrgente ? "Urgente" : "Normal") + "] Siendo atendido por el médico..."); 
+            // Registra la salida para poder seguir a cada paciente de punta a punta
+            hospital.logEstado("PACIENTE " + id + " SE RETIRA");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
