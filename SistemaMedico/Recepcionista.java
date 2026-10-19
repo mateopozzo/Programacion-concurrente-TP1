@@ -4,10 +4,10 @@ public class Recepcionista implements Runnable {
 
     private Hospital hospital = null;
 
-    public void run(){
+    public void run() {
         hospital = Hospital.obtenerInstancia();
         try {
-            while(true){
+            while (true) {
                 // Espera el arribo de algún paciente
                 hospital.pacienteEnRecepcion.acquire();
 
@@ -23,12 +23,11 @@ public class Recepcionista implements Runnable {
                 // Notifica al Paciente que ingresó a la SdE
                 hospital.permisoIngresoSdE.release();
 
-                // Impresión de estado
-                hospital.logEstado("======== INGRESO A SDE ========");
+                // Impresión de estado (logEstado ya agrega los separadores)
+                hospital.logEstado("INGRESO A SDE");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }
 }
-

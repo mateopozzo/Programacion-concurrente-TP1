@@ -11,24 +11,23 @@ public class Enfermero implements Runnable {
     private static final Random generadorVA = new Random();
 
     private int tiempoAtencion() {
-        return generadorVA.nextInt(100,1500);
+        return generadorVA.nextInt(100, 1500);
     }
 
     public void run() {
         hospital = Hospital.obtenerInstancia();
         while (true) {
             try {
-                //  Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
+                // Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
                 hospital.pacientesPendientes.acquire();
 
-                //  Al despertar, verifica primero si la señal fue por una urgencia
+                // Al despertar, verifica primero si la señal fue por una urgencia
                 if (hospital.pacienteUrgente.tryAcquire()) {
                     prepararPacienteUrgente();
-                } else if (hospital.pacienteEnSdE.tryAcquire()) {
-                    // No pudo tomar una urgencia, entonces la señal fue de un paciente normal
+                } else {
+                    // Si no fue urgencia, fue un normal: acquire en vez de continue para no perder nunca al paciente
+                    hospital.pacienteEnSdE.acquire();
                     prepararPacienteNormal();
-                }else {
-                    continue;
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -42,25 +41,30 @@ public class Enfermero implements Runnable {
         // Revisa si hay lugar en la sala de preparacion
         hospital.lugaresDisponiblesSdP.acquire();
 
-        // Notifica a recepción que queda un lugar vacío en la sala de espera
-        hospital.lugaresDisponiblesSdE.release();
-
-        // Actualiza contador
+        // Ambos mutex en el mismo orden que logEstado (SdE -> SdP): traspaso atómico y sin deadlock
         hospital.mutexSdE.acquire();
-        hospital.pacientesEnSalaPreparacion++;
+        hospital.mutexSdP.acquire();
         hospital.pacientesEnSalaEspera--;
+        hospital.pacientesEnSalaPreparacion++;
+        hospital.mutexSdP.release();
         hospital.mutexSdE.release();
 
-        // Impresión de estado
-        hospital.logEstado("======== PACIENTE NO URGENTE PASA A ENFERMERIA ========");
+        // Libera el lugar después de actualizar el contador, así el log nunca muestra más de 10 en espera
+        hospital.lugaresDisponiblesSdE.release();
 
-        // Notifica al Paciente que pasa a la sala de Preparación
-        hospital.permisoIngresoSdPNormal.release();
+        // Impresión de estado
+        hospital.logEstado("PACIENTE NO URGENTE PASA A ENFERMERIA");
 
         // Simula tiempo de preparación
         sleep(tiempoAtencion());
 
-        // Notifica al Médico que tiene un paciente por atender
+        // Avisa al paciente recién al terminar la preparación, igual que con las urgencias
+        hospital.permisoIngresoSdPNormal.release();
+
+        // Avisa el tipo antes que el aviso general, así el médico siempre lo encuentra
+        hospital.pacienteNormalEnSdP.release();
+
+        // Notifica al médico que deja un paciente en la sala de preparación
         hospital.pacienteEnSdP.release();
     }
 
@@ -69,19 +73,23 @@ public class Enfermero implements Runnable {
         // Revisa si hay lugar en la sala de preparacion
         hospital.lugaresDisponiblesSdP.acquire();
 
-        // Actualiza contador
+        // Actualiza contadores: la urgencia deja de esperar y entra a preparación
         hospital.mutexSdP.acquire();
+        hospital.pacientesUrgentesEsperando--;
         hospital.pacientesEnSalaPreparacion++;
         hospital.mutexSdP.release();
 
         // Impresión de estado
-        hospital.logEstado("======== URGENCIA PASA A ENFERMERIA ========");
+        hospital.logEstado("URGENCIA PASA A ENFERMERIA");
 
         // Simula tiempo de preparación
         sleep(tiempoAtencion());
 
         // Notifica al paciente que terminó su preparación
         hospital.permisoIngresoSdPUrgente.release();
+
+        // Avisa el tipo antes que el aviso general, así el médico siempre lo encuentra
+        hospital.pacienteUrgenteEnSdP.release();
 
         // Notifica al médico que deja un paciente en la sala de preparación
         hospital.pacienteEnSdP.release();
