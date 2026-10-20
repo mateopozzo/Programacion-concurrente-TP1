@@ -11,3 +11,5 @@ bin/*
 *.class
 *.iml
 *.jar
+
+out/

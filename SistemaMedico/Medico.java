@@ -16,16 +16,14 @@ public class Medico implements Runnable {
         try {
             while (true) {
                 // Espera a que algún paciente haya sido preparado por el enfermero
-                hospital.pacienteEnSdP.acquire();
+                hospital.pacienteEnSdP.acquireUninterruptibly();
 
-                // Si hay una urgencia preparada pasa primero; si no, el acquire no bloquea porque hay un normal seguro
-                boolean urgente = hospital.pacienteUrgenteEnSdP.tryAcquire();
-                if (!urgente) {
-                    hospital.pacienteNormalEnSdP.acquire();
+                // Elige con el contador en vez de tryAcquire: si hay una urgencia preparada pasa primero
+                hospital.mutexSdP.acquireUninterruptibly();
+                boolean urgente = hospital.urgenciasPreparadas > 0;
+                if (urgente) {
+                    hospital.urgenciasPreparadas--;
                 }
-
-                // Actualización de contadores
-                hospital.mutexSdP.acquire();
                 hospital.pacientesEnSalaPreparacion--;
                 hospital.pacientesEnAtencionMedica++;
                 hospital.mutexSdP.release();
@@ -47,17 +45,17 @@ public class Medico implements Runnable {
                 Thread.sleep(tiempoAtencion());
 
                 // Actualiza contadores
-                hospital.mutexSdP.acquire();
+                hospital.mutexSdP.acquireUninterruptibly();
                 hospital.pacientesEnAtencionMedica--;
                 hospital.mutexSdP.release();
 
                 // Loguea antes de liberar al paciente, así el fin de la atención aparece antes de que se retire
                 hospital.logEstado("FINALIZA LA ATENCION AL PACIENTE");
 
-                // Avisa al paciente que finalizó su turno
+                // Recién acá libera al paciente: se queda en el consultorio durante toda la consulta
                 hospital.siendoAtendido.release();
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException e) { // Solo puede venir del sleep
             Thread.currentThread().interrupt();
         }
     }
