@@ -28,7 +28,7 @@ public class Enfermero implements Runnable {
                     prepararPacienteNormal();
                 }
             } catch (InterruptedException e) { // Solo puede venir del sleep
-                Thread.currentThread().interrupt();
+                e.printStackTrace();
                 break;
             }
         }

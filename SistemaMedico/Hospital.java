@@ -75,7 +75,6 @@ public class Hospital {
     // Crea un hilo del personal como daemon: no impide que el programa termine cuando se van todos los pacientes
     private void iniciarPersonal(Runnable rol) {
         Thread hilo = new Thread(rol);
-        hilo.setDaemon(true);
         hilo.start();
     }
 

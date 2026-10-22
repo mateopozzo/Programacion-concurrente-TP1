@@ -56,7 +56,7 @@ public class Medico implements Runnable {
                 hospital.siendoAtendido.release();
             }
         } catch (InterruptedException e) { // Solo puede venir del sleep
-            Thread.currentThread().interrupt();
+            e.printStackTrace();
         }
     }
 
