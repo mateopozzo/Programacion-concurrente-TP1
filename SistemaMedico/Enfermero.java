@@ -2,8 +2,6 @@ package SistemaMedico;
 
 import java.util.Random;
 
-import static java.lang.Thread.sleep;
-
 public class Enfermero implements Runnable {
 
     private Hospital hospital = null;
@@ -11,7 +9,7 @@ public class Enfermero implements Runnable {
     private static final Random generadorVA = new Random();
 
     private int tiempoAtencion() {
-        return generadorVA.nextInt(100, 1500);
+        return 100 + generadorVA.nextInt(1400);
     }
 
     public void run() {
@@ -20,6 +18,9 @@ public class Enfermero implements Runnable {
             try {
                 // Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
                 hospital.pacientesPendientes.acquireUninterruptibly();
+
+                // Si terminó la simulación, el hilo principal lo despertó para que salga
+                if (hospital.finSimulacion) break;
 
                 // Elige a quién pasar: si hay urgencias esperando van primero
                 if (elegirSiguientePaciente()) {
@@ -34,7 +35,7 @@ public class Enfermero implements Runnable {
         }
     }
 
-    // Decide con los contadores en vez de tryAcquire, porque solo se permite acquireUninterruptibly
+    // Elige al siguiente paciente con los contadores: primero las urgencias
     private boolean elegirSiguientePaciente() {
 
         // Espera lugar en la sala de preparación antes de elegir, así la prioridad se decide con lo que hay en ese momento
@@ -65,7 +66,7 @@ public class Enfermero implements Runnable {
         hospital.logEstado("PACIENTE NO URGENTE PASA A ENFERMERIA");
 
         // Simula tiempo de preparación
-        sleep(tiempoAtencion());
+        Thread.sleep(tiempoAtencion());
 
         // Avisa al paciente recién al terminar la preparación, igual que con las urgencias
         hospital.permisoIngresoSdPNormal.release();
@@ -80,7 +81,7 @@ public class Enfermero implements Runnable {
         hospital.logEstado("URGENCIA PASA A ENFERMERIA");
 
         // Simula tiempo de preparación
-        sleep(tiempoAtencion());
+        Thread.sleep(tiempoAtencion());
 
         // Notifica al paciente que terminó su preparación
         hospital.permisoIngresoSdPUrgente.release();

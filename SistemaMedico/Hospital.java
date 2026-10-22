@@ -1,7 +1,5 @@
 package SistemaMedico;
 
-import static java.lang.Thread.sleep;
-
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
@@ -52,8 +50,11 @@ public class Hospital {
     // Contadores (protegidos por mutexSdP)
     public int pacientesUrgentesEsperando = 0; // Urgencias que esperan al enfermero; también le indica a quién atender primero
     public int pacientesEnSalaPreparacion = 0;
-    public int urgenciasPreparadas = 0;        // Urgencias listas para el médico; le permite darles prioridad sin tryAcquire
+    public int urgenciasPreparadas = 0;        // Urgencias listas para el médico; le permite darles prioridad
     public int pacientesEnAtencionMedica = 0;
+
+    // Fin de la simulación:
+    public boolean finSimulacion = false; // Lo escribe solo el hilo principal, antes de despertar al personal
 
     public void logEstado(String tituloDeLog) {
         mutexImpresion.acquireUninterruptibly();
@@ -72,7 +73,7 @@ public class Hospital {
         mutexImpresion.release();
     }
 
-    // Crea un hilo del personal como daemon: no impide que el programa termine cuando se van todos los pacientes
+    // Crea un hilo del personal
     private void iniciarPersonal(Runnable rol) {
         Thread hilo = new Thread(rol);
         hilo.start();
@@ -91,14 +92,24 @@ public class Hospital {
         // Genera una cantidad fija de pacientes, cada uno con su id para poder seguirlo en el log
         for (int id = 1; id <= CANTIDAD_PACIENTES; id++) {
             new Thread(new Paciente(id, generadorVA.nextBoolean())).start();
-            sleep(generadorVA.nextInt(200, 2000));
+            Thread.sleep(200 + generadorVA.nextInt(1800));
         }
 
-        // Espera con un semáforo (en vez de join) a que se retiren todos los pacientes antes de cerrar
+        // Espera con un semáforo a que se retiren todos los pacientes antes de cerrar
         for (int i = 0; i < CANTIDAD_PACIENTES; i++) {
             pacientesRetirados.acquireUninterruptibly();
         }
-
+        
+        // Marca el fin y despierta una vez a cada integrante del personal para que salga de su loop
+        finSimulacion = true;
+        for (int i = 0; i < CANTIDAD_RECEPCIONISTAS; i++) {
+            pacienteEnRecepcion.release();
+        }
+        for (int i = 0; i < CANTIDAD_ENFERMEROS; i++) {
+            pacientesPendientes.release();
+        }
+        pacienteEnSdP.release();
+        
         logEstado("FIN DE LA SIMULACION");
     }
 }

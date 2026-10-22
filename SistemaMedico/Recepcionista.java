@@ -11,6 +11,9 @@ public class Recepcionista implements Runnable {
             // Espera el arribo de algún paciente
             hospital.pacienteEnRecepcion.acquireUninterruptibly();
 
+            // Si terminó la simulación, el hilo principal la despertó para que salga
+            if (hospital.finSimulacion) break;
+
             // Si SdE está llena, espera a que el Enfermero libere algún lugar
             hospital.lugaresDisponiblesSdE.acquireUninterruptibly();
 

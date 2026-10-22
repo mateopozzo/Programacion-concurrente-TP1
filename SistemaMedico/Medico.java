@@ -7,7 +7,7 @@ public class Medico implements Runnable {
     private static final Random generadorVA = new Random();
 
     private int tiempoAtencion() {
-        return generadorVA.nextInt(100, 3000);
+        return 100 + generadorVA.nextInt(2900);
     }
 
     @Override
@@ -18,7 +18,10 @@ public class Medico implements Runnable {
                 // Espera a que algún paciente haya sido preparado por el enfermero
                 hospital.pacienteEnSdP.acquireUninterruptibly();
 
-                // Elige con el contador en vez de tryAcquire: si hay una urgencia preparada pasa primero
+                // Si terminó la simulación, el hilo principal lo despertó para que salga
+                if (hospital.finSimulacion) break;
+
+                // Elige con el contador: si hay una urgencia preparada pasa primero
                 hospital.mutexSdP.acquireUninterruptibly();
                 boolean urgente = hospital.urgenciasPreparadas > 0;
                 if (urgente) {
