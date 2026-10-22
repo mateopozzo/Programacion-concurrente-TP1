@@ -22,9 +22,7 @@ public class Hospital {
         return INSTANCIA;
     }
 
-    // Todos los semáforos se usan solo con acquireUninterruptibly() (P) y release() (V), como en Sistemas Operativos
-
-    // Muteces para secciones críticas. Si se necesita más de uno: mutexImpresion -> mutexSdE -> mutexSdP
+    // Muteces para secciones críticas. Orden: mutexImpresion -> mutexSdE -> mutexSdP
     public final Semaphore mutexSdE = new Semaphore(1); // Protege contadores de recepción y Sala de Espera
     public final Semaphore mutexSdP = new Semaphore(1); // Protege contadores de urgencias, Sala de Preparación y consultorio
     public final Semaphore mutexImpresion = new Semaphore(1);

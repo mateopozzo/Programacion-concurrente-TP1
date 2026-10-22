@@ -18,29 +18,29 @@ public class Enfermero implements Runnable {
         hospital = Hospital.obtenerInstancia();
         while (true) {
             try {
-                // Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
+                // Se bloquea hasta que llegue CUALQUIER paciente
                 hospital.pacientesPendientes.acquireUninterruptibly();
 
-                // Elige a quién pasar: si hay urgencias esperando van primero
+                // Prioriza a las urgencias
                 if (elegirSiguientePaciente()) {
                     prepararPacienteUrgente();
                 } else {
                     prepararPacienteNormal();
                 }
-            } catch (InterruptedException e) { // Solo puede venir del sleep
+            } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;
             }
         }
     }
 
-    // Decide con los contadores en vez de tryAcquire, porque solo se permite acquireUninterruptibly
     private boolean elegirSiguientePaciente() {
 
-        // Espera lugar en la sala de preparación antes de elegir, así la prioridad se decide con lo que hay en ese momento
+        // Espera lugar en la sala de preparación antes de elegir
         hospital.lugaresDisponiblesSdP.acquireUninterruptibly();
 
-        // Ambos mutex en el mismo orden que logEstado (SdE -> SdP): elección y traspaso atómicos, sin deadlock
+        // De nuevo: Se priorizan los urgentes.
+        // Ademas se toma mutex de ambas salas para que ningun otro hilo pueda cambiar el estado
         hospital.mutexSdE.acquireUninterruptibly();
         hospital.mutexSdP.acquireUninterruptibly();
         boolean urgente = hospital.pacientesUrgentesEsperando > 0;
@@ -58,7 +58,7 @@ public class Enfermero implements Runnable {
 
     private void prepararPacienteNormal() throws InterruptedException {
 
-        // Libera el lugar después de actualizar el contador, así el log nunca muestra más de 10 en espera
+        // Libera el lugar
         hospital.lugaresDisponiblesSdE.release();
 
         // Impresión de estado
@@ -67,7 +67,7 @@ public class Enfermero implements Runnable {
         // Simula tiempo de preparación
         sleep(tiempoAtencion());
 
-        // Avisa al paciente recién al terminar la preparación, igual que con las urgencias
+        // Avisa al paciente recién al terminar la preparación
         hospital.permisoIngresoSdPNormal.release();
 
         // Notifica al médico que deja un paciente en la sala de preparación
@@ -85,7 +85,7 @@ public class Enfermero implements Runnable {
         // Notifica al paciente que terminó su preparación
         hospital.permisoIngresoSdPUrgente.release();
 
-        // Registra la urgencia lista antes de avisar al médico, así él la ve y le da prioridad
+        // Registra la urgencia lista antes de avisar al médico
         hospital.mutexSdP.acquireUninterruptibly();
         hospital.urgenciasPreparadas++;
         hospital.mutexSdP.release();

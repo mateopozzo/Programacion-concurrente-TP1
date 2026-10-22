@@ -13,10 +13,10 @@ public class Paciente implements Runnable {
 
     @Override
     public void run() {
-        // Sin try/catch: acquireUninterruptibly no lanza InterruptedException
         hospital = Hospital.obtenerInstancia();
         if (esUrgente) {
             // Cuenta la urgencia antes de avisar, así el enfermero la ve al despertar y le da prioridad
+            // Bypassea la recepcion directamente
             hospital.mutexSdP.acquireUninterruptibly();
             hospital.pacientesUrgentesEsperando++;
             hospital.mutexSdP.release();
@@ -30,7 +30,7 @@ public class Paciente implements Runnable {
             // Espera a que el enfermero termine de prepararlo
             hospital.permisoIngresoSdPUrgente.acquireUninterruptibly();
 
-            // Espera a que el médico lo llame (las urgencias pasan antes que los normales)
+            // Espera a que el médico lo llame
             hospital.permisoAtencionUrgente.acquireUninterruptibly();
         } else {
 
@@ -54,7 +54,7 @@ public class Paciente implements Runnable {
             // Espera a que el enfermero termine de prepararlo
             hospital.permisoIngresoSdPNormal.acquireUninterruptibly();
 
-            // Espera a que el médico lo llame (después de las urgencias)
+            // Espera a que el médico lo llame
             hospital.permisoAtencionNormal.acquireUninterruptibly();
         }
 
