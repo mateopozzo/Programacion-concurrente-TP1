@@ -5,11 +5,13 @@ public class Recepcionista implements Runnable {
     private Hospital hospital = null;
 
     public void run() {
-        // Sin try/catch: acquireUninterruptibly no lanza InterruptedException
         hospital = Hospital.obtenerInstancia();
         while (true) {
             // Espera el arribo de algún paciente
             hospital.pacienteEnRecepcion.acquireUninterruptibly();
+
+            // checkeo Bandera de finalización
+            if (hospital.finSimulacion) break;
 
             // Si SdE está llena, espera a que el Enfermero libere algún lugar
             hospital.lugaresDisponiblesSdE.acquireUninterruptibly();
@@ -23,7 +25,7 @@ public class Recepcionista implements Runnable {
             // Notifica al Paciente que ingresó a la SdE
             hospital.permisoIngresoSdE.release();
 
-            // Impresión de estado (logEstado ya agrega los separadores)
+            // Impresión de estado
             hospital.logEstado("INGRESO A SDE");
         }
     }

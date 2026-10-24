@@ -3,7 +3,7 @@ package SistemaMedico;
 public class Paciente implements Runnable {
 
     private final int id;            // Identifica al paciente en el log
-    private final boolean esUrgente; // Define qué tipo de paciente es
+    private final boolean esUrgente;
     private Hospital hospital = null;
 
     public Paciente(int id, boolean esUrgente) {
@@ -15,8 +15,7 @@ public class Paciente implements Runnable {
     public void run() {
         hospital = Hospital.obtenerInstancia();
         if (esUrgente) {
-            // Cuenta la urgencia antes de avisar, así el enfermero la ve al despertar y le da prioridad
-            // Bypassea la recepcion directamente
+            // Cuenta la urgencia antes de despertar al enfermero
             hospital.mutexSdP.acquireUninterruptibly();
             hospital.pacientesUrgentesEsperando++;
             hospital.mutexSdP.release();
@@ -61,7 +60,7 @@ public class Paciente implements Runnable {
         // Se queda en el consultorio hasta que el médico termina la consulta
         hospital.siendoAtendido.acquireUninterruptibly();
 
-        // Registra la salida para poder seguir a cada paciente de punta a punta
+        // Impresión de estado
         hospital.logEstado("PACIENTE " + id + " SE RETIRA");
 
         // Avisa que salió del sistema

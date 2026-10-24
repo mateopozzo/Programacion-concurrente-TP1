@@ -7,7 +7,7 @@ public class Medico implements Runnable {
     private static final Random generadorVA = new Random();
 
     private int tiempoAtencion() {
-        return generadorVA.nextInt(100, 3000);
+        return 100 + generadorVA.nextInt(2900);
     }
 
     @Override
@@ -15,10 +15,13 @@ public class Medico implements Runnable {
         Hospital hospital = Hospital.obtenerInstancia();
         try {
             while (true) {
-                // Espera a que algún paciente haya sido preparado por el enfermero
+                // Espera que el enfermero lo desbloquee
                 hospital.pacienteEnSdP.acquireUninterruptibly();
 
-                // Prioriza los pacientes urgentes
+                // checkeo Bandera de finalización
+                if (hospital.finSimulacion) break;
+
+                // Elige tipo de paciente con el contador
                 hospital.mutexSdP.acquireUninterruptibly();
                 boolean urgente = hospital.urgenciasPreparadas > 0;
                 if (urgente) {
@@ -28,7 +31,7 @@ public class Medico implements Runnable {
                 hospital.pacientesEnAtencionMedica++;
                 hospital.mutexSdP.release();
 
-                // Libera el lugar después de actualizar el contador
+                // Libera el lugar
                 hospital.lugaresDisponiblesSdP.release();
 
                 // Llama al paciente del tipo elegido
@@ -49,7 +52,7 @@ public class Medico implements Runnable {
                 hospital.pacientesEnAtencionMedica--;
                 hospital.mutexSdP.release();
 
-                // Loguea antes de liberar al paciente, así el fin de la atención aparece antes de que se retire
+                // Impresion de log antes de desbloquear otro hilo
                 hospital.logEstado("FINALIZA LA ATENCION AL PACIENTE");
 
                 // Avisa al hospital que un paciente terminó de atenderse

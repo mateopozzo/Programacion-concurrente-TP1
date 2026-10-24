@@ -2,8 +2,6 @@ package SistemaMedico;
 
 import java.util.Random;
 
-import static java.lang.Thread.sleep;
-
 public class Enfermero implements Runnable {
 
     private Hospital hospital = null;
@@ -11,7 +9,7 @@ public class Enfermero implements Runnable {
     private static final Random generadorVA = new Random();
 
     private int tiempoAtencion() {
-        return generadorVA.nextInt(100, 1500);
+        return 100 + generadorVA.nextInt(1400);
     }
 
     public void run() {
@@ -21,6 +19,10 @@ public class Enfermero implements Runnable {
                 // Se bloquea hasta que llegue CUALQUIER paciente
                 hospital.pacientesPendientes.acquireUninterruptibly();
 
+                // Si terminó la simulación, el hilo principal lo despertó para que salga
+                if (hospital.finSimulacion) break;
+
+                // Escoge que paciente prepara
                 // Prioriza a las urgencias
                 if (elegirSiguientePaciente()) {
                     prepararPacienteUrgente();
@@ -36,11 +38,10 @@ public class Enfermero implements Runnable {
 
     private boolean elegirSiguientePaciente() {
 
-        // Espera lugar en la sala de preparación antes de elegir
+        // Reserva lugar de la sala de preparacion
         hospital.lugaresDisponiblesSdP.acquireUninterruptibly();
 
-        // De nuevo: Se priorizan los urgentes.
-        // Ademas se toma mutex de ambas salas para que ningun otro hilo pueda cambiar el estado
+        // Mutex en orden
         hospital.mutexSdE.acquireUninterruptibly();
         hospital.mutexSdP.acquireUninterruptibly();
         boolean urgente = hospital.pacientesUrgentesEsperando > 0;
@@ -58,14 +59,14 @@ public class Enfermero implements Runnable {
 
     private void prepararPacienteNormal() throws InterruptedException {
 
-        // Libera el lugar
+        // Libera lugar en SdE
         hospital.lugaresDisponiblesSdE.release();
 
         // Impresión de estado
         hospital.logEstado("PACIENTE NO URGENTE PASA A ENFERMERIA");
 
         // Simula tiempo de preparación
-        sleep(tiempoAtencion());
+        Thread.sleep(tiempoAtencion());
 
         // Avisa al paciente recién al terminar la preparación
         hospital.permisoIngresoSdPNormal.release();
@@ -80,12 +81,12 @@ public class Enfermero implements Runnable {
         hospital.logEstado("URGENCIA PASA A ENFERMERIA");
 
         // Simula tiempo de preparación
-        sleep(tiempoAtencion());
+        Thread.sleep(tiempoAtencion());
 
         // Notifica al paciente que terminó su preparación
         hospital.permisoIngresoSdPUrgente.release();
 
-        // Registra la urgencia lista antes de avisar al médico
+        // Registra la urgencia
         hospital.mutexSdP.acquireUninterruptibly();
         hospital.urgenciasPreparadas++;
         hospital.mutexSdP.release();
