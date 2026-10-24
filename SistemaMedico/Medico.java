@@ -55,10 +55,10 @@ public class Medico implements Runnable {
                 // Impresion de log antes de desbloquear otro hilo
                 hospital.logEstado("FINALIZA LA ATENCION AL PACIENTE");
 
-                // Libera al paciente
+                // Avisa al hospital que un paciente terminó de atenderse
                 hospital.siendoAtendido.release();
             }
-        } catch (InterruptedException e) { // Solo puede venir del sleep
+        } catch (InterruptedException e) { // odio el trycatch de sleep
             e.printStackTrace();
         }
     }

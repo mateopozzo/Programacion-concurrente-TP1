@@ -16,13 +16,14 @@ public class Enfermero implements Runnable {
         hospital = Hospital.obtenerInstancia();
         while (true) {
             try {
-                // Se bloquea hasta que llegue CUALQUIER paciente (urgente o normal)
+                // Se bloquea hasta que llegue CUALQUIER paciente
                 hospital.pacientesPendientes.acquireUninterruptibly();
 
                 // Si terminó la simulación, el hilo principal lo despertó para que salga
                 if (hospital.finSimulacion) break;
 
                 // Escoge que paciente prepara
+                // Prioriza a las urgencias
                 if (elegirSiguientePaciente()) {
                     prepararPacienteUrgente();
                 } else {
@@ -67,7 +68,7 @@ public class Enfermero implements Runnable {
         // Simula tiempo de preparación
         Thread.sleep(tiempoAtencion());
 
-        // Avisa al paciente al terminar preparacion
+        // Avisa al paciente recién al terminar la preparación
         hospital.permisoIngresoSdPNormal.release();
 
         // Notifica al médico que deja un paciente en la sala de preparación
