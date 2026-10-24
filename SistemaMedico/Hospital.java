@@ -7,11 +7,11 @@ public class Hospital {
 
     public static final int MAX_SALA_ESPERA = 10;
     public static final int MAX_SALA_PREPARACION = 5;
-    public static final int CANTIDAD_PACIENTES = 30;     // Cantidad finita para que la simulación termine
-    public static final int CANTIDAD_RECEPCIONISTAS = 1; // Según la consigna; la lógica soporta más de una
-    public static final int CANTIDAD_ENFERMEROS = 1;     // Según la consigna; la lógica soporta más de uno
+    public static final int CANTIDAD_PACIENTES = 15;
+    public static final int CANTIDAD_RECEPCIONISTAS = 3;
+    public static final int CANTIDAD_ENFERMEROS = 5;
 
-    // Instancia creada al cargar la clase: es segura aunque varios hilos llamen a obtenerInstancia
+    // Instancia única || patrón Singletón
     private static final Hospital INSTANCIA = new Hospital();
 
     private Hospital() {}
@@ -20,14 +20,12 @@ public class Hospital {
         return INSTANCIA;
     }
 
-    // Todos los semáforos se usan solo con acquireUninterruptibly() (P) y release() (V), como en Sistemas Operativos
-
-    // Muteces para secciones críticas. Si se necesita más de uno: mutexImpresion -> mutexSdE -> mutexSdP
+    // Mutexes para secciones críticas. Orden imperativo: mutexImpresion -> mutexSdE -> mutexSdP
     public final Semaphore mutexSdE = new Semaphore(1); // Protege contadores de recepción y Sala de Espera
     public final Semaphore mutexSdP = new Semaphore(1); // Protege contadores de urgencias, Sala de Preparación y consultorio
     public final Semaphore mutexImpresion = new Semaphore(1);
 
-    // Semáforos para flujo de pacientes (notificación)
+    // Semáforos para flujo de pacientes (notificaciones)
     public final Semaphore pacienteEnRecepcion = new Semaphore(0); // Despierta a la Recepcionista
     public final Semaphore pacientesPendientes = new Semaphore(0); // Despierta al Enfermero; el tipo de paciente lo decide con los contadores
     public final Semaphore pacienteEnSdP = new Semaphore(0);       // Despierta al Médico (paciente preparado de cualquier tipo)
@@ -35,7 +33,7 @@ public class Hospital {
     public final Semaphore lugaresDisponiblesSdP = new Semaphore(MAX_SALA_PREPARACION); // Usado por el Enfermero para enviar pacientes a SdP
     public final Semaphore pacientesRetirados = new Semaphore(0);  // Cada paciente avisa al irse; iniciar espera a todos para terminar
 
-    // Transición individual del paciente. Son justos (FIFO) para que los pacientes avancen en orden de llegada
+    // Transición individual del paciente. Son justos (FIFO) y diferencian de dos prioridades
     public final Semaphore permisoIngresoSdE = new Semaphore(0, true);
     public final Semaphore permisoIngresoSdPUrgente = new Semaphore(0, true);
     public final Semaphore permisoIngresoSdPNormal = new Semaphore(0, true);
@@ -48,9 +46,9 @@ public class Hospital {
     public int pacientesEnSalaEspera = 0;
 
     // Contadores (protegidos por mutexSdP)
-    public int pacientesUrgentesEsperando = 0; // Urgencias que esperan al enfermero; también le indica a quién atender primero
+    public int pacientesUrgentesEsperando = 0; // Urgencias que esperan al enfermero
     public int pacientesEnSalaPreparacion = 0;
-    public int urgenciasPreparadas = 0;        // Urgencias listas para el médico; le permite darles prioridad
+    public int urgenciasPreparadas = 0;        // Urgencias listas para el médico
     public int pacientesEnAtencionMedica = 0;
 
     // Fin de la simulación:

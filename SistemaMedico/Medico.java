@@ -15,13 +15,13 @@ public class Medico implements Runnable {
         Hospital hospital = Hospital.obtenerInstancia();
         try {
             while (true) {
-                // Espera a que algún paciente haya sido preparado por el enfermero
+                // Espera que el enfermero lo desbloquee
                 hospital.pacienteEnSdP.acquireUninterruptibly();
 
-                // Si terminó la simulación, el hilo principal lo despertó para que salga
+                // checkeo Bandera de finalización
                 if (hospital.finSimulacion) break;
 
-                // Elige con el contador: si hay una urgencia preparada pasa primero
+                // Elige tipo de paciente con el contador
                 hospital.mutexSdP.acquireUninterruptibly();
                 boolean urgente = hospital.urgenciasPreparadas > 0;
                 if (urgente) {
@@ -31,7 +31,7 @@ public class Medico implements Runnable {
                 hospital.pacientesEnAtencionMedica++;
                 hospital.mutexSdP.release();
 
-                // Libera el lugar después de actualizar el contador, así el log nunca muestra más de 5 en preparación
+                // Libera el lugar
                 hospital.lugaresDisponiblesSdP.release();
 
                 // Llama al paciente del tipo elegido
@@ -52,10 +52,10 @@ public class Medico implements Runnable {
                 hospital.pacientesEnAtencionMedica--;
                 hospital.mutexSdP.release();
 
-                // Loguea antes de liberar al paciente, así el fin de la atención aparece antes de que se retire
+                // Impresion de log antes de desbloquear otro hilo
                 hospital.logEstado("FINALIZA LA ATENCION AL PACIENTE");
 
-                // Recién acá libera al paciente: se queda en el consultorio durante toda la consulta
+                // Libera al paciente
                 hospital.siendoAtendido.release();
             }
         } catch (InterruptedException e) { // Solo puede venir del sleep

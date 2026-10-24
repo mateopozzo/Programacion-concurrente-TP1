@@ -3,7 +3,7 @@ package SistemaMedico;
 public class Paciente implements Runnable {
 
     private final int id;            // Identifica al paciente en el log
-    private final boolean esUrgente; // Define qué tipo de paciente es
+    private final boolean esUrgente;
     private Hospital hospital = null;
 
     public Paciente(int id, boolean esUrgente) {
@@ -13,10 +13,9 @@ public class Paciente implements Runnable {
 
     @Override
     public void run() {
-        // Sin try/catch: acquireUninterruptibly no lanza InterruptedException
         hospital = Hospital.obtenerInstancia();
         if (esUrgente) {
-            // Cuenta la urgencia antes de avisar, así el enfermero la ve al despertar y le da prioridad
+            // Cuenta la urgencia antes de despertar al enfermero
             hospital.mutexSdP.acquireUninterruptibly();
             hospital.pacientesUrgentesEsperando++;
             hospital.mutexSdP.release();
@@ -30,7 +29,7 @@ public class Paciente implements Runnable {
             // Espera a que el enfermero termine de prepararlo
             hospital.permisoIngresoSdPUrgente.acquireUninterruptibly();
 
-            // Espera a que el médico lo llame (las urgencias pasan antes que los normales)
+            // Espera a que el médico lo llame
             hospital.permisoAtencionUrgente.acquireUninterruptibly();
         } else {
 
@@ -54,14 +53,14 @@ public class Paciente implements Runnable {
             // Espera a que el enfermero termine de prepararlo
             hospital.permisoIngresoSdPNormal.acquireUninterruptibly();
 
-            // Espera a que el médico lo llame (después de las urgencias)
+            // Espera a que el médico lo llame
             hospital.permisoAtencionNormal.acquireUninterruptibly();
         }
 
         // Se queda en el consultorio hasta que el médico termina la consulta
         hospital.siendoAtendido.acquireUninterruptibly();
 
-        // Registra la salida para poder seguir a cada paciente de punta a punta
+        // Impresión de estado
         hospital.logEstado("PACIENTE " + id + " SE RETIRA");
 
         // Avisa que salió del sistema
